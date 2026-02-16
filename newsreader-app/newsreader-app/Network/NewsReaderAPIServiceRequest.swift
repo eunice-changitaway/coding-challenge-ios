@@ -4,49 +4,33 @@
 
 import Foundation
 
+enum NewsAPIError: Error {
+    case invalidURL
+    case requestFailed(statusCode: Int)
+}
+
 final class NewsReaderAPIServiceRequest {
     private let apiKey = "6328308dbece476db477f50b97c7765f"
-    private let baseURL = "https://newsapi.org/v2"
+    private let baseURL = "https://newsapi.org/v2/top-headlines"
     
-    enum APIError: Error {
-        case invalidURL
-        case invalidResponse
-        case decodingError
-    }
-    
-    // MARK: Fetch data from newsAPI
-    func fetchNews() async throws -> [NewArticles] {
+    // MARK: Fetch news from API - currently isn't working for Headlines tab
+    func fetchNews(forSources sourceIDs: [String]) async throws -> [NewArticles] {
+        guard !sourceIDs.isEmpty else { return [] } // Nothing selected
 
-         guard let url = URL(string: "\(baseURL)/top-headlines?country=us&apiKey=\(apiKey)") else {
-             throw APIError.invalidURL
-         }
+        let sourcesQuery = sourceIDs.joined(separator: ",")
+        let urlString = "\(baseURL)?sources=\(sourcesQuery)&apiKey=\(apiKey)"
 
-         let (data, response) = try await URLSession.shared.data(from: url)
+        guard let url = URL(string: urlString) else { throw NewsAPIError.invalidURL }
 
-         guard let httpResponse = response as? HTTPURLResponse,
-               httpResponse.statusCode == 200 else {
-             throw APIError.invalidResponse
-         }
+        let (data, response) = try await URLSession.shared.data(from: url)
 
-         do {
-             let decoded = try JSONDecoder().decode(NewsResponse.self, from: data)
-             return decoded.articles
-         } catch {
-             throw APIError.decodingError
-         }
-     }
-    
-    // MARK: Fetch mock data
-    func fetchMockNews() throws -> [NewArticles] {
-
-        guard let url = Bundle.main.url(forResource: "mockarticles", withExtension: "json") else {
-            throw APIError.invalidURL
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw NewsAPIError.requestFailed(statusCode: httpResponse.statusCode)
         }
-
-        let data = try Data(contentsOf: url)
 
         let decoded = try JSONDecoder().decode(NewsResponse.self, from: data)
         return decoded.articles
     }
 }
+
 

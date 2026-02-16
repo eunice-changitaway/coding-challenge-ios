@@ -1,6 +1,6 @@
 //
 //  mockarticles.json
-//
+//  Use static mock data from viewModel for now
 
 {
     "status": "ok",

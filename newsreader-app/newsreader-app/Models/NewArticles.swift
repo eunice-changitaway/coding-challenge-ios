@@ -4,15 +4,15 @@
 
 import Foundation
 
-struct NewsResponse: Codable {
+struct NewsResponse: Decodable {
     let status: String
     let totalResults: Int
     let articles: [NewArticles]
 }
 
 struct NewArticles: Codable, Identifiable {
-    var id = UUID()
-    let source: Source
+    var id: UUID = UUID()
+    let source: Source?
     let title: String
     let description: String?
     let author: String?
@@ -31,16 +31,28 @@ struct NewArticles: Codable, Identifiable {
         self.publishedAt = publishedAt
         self.content = content
     }
+    
+    struct Source: Codable, Identifiable {
+        let id: String?
+        let name: String
+        
+        init(id: String?, name: String) {
+            self.id = id
+            self.name = name
+        }
+    }
 }
 
+// MARK: - For the Source Tab
 
-struct Source: Codable {
+struct NewsSource: Codable, Identifiable {
     let id: String
     let name: String
-    
-    init(id: String, name: String) {
-        self.id = id
-        self.name = name
-    }
+    let description: String?
+}
+
+struct NewsSourcesResponse: Codable {
+    let status: String
+    let sources: [NewsSource]
 }
 
